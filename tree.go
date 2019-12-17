@@ -24,6 +24,7 @@ var (
 func NewTree(item Item) *Tree {
 	t := &Tree{
 		root: item,
+		mux: &sync.Mutex{},
 	}
 
 	t.addEntry(item)
@@ -36,11 +37,14 @@ type Tree struct {
 	adj     [CntItemLimit][CntItemLimit]bool
 	entries []Item
 
-	mux sync.Mutex
+	mux *sync.Mutex
 }
 
 // Render return the tree format strings but if there is a circuit in the tree it return the error.
 func (t *Tree) Render() ([]string, error) {
+	t.mux.Lock()
+	defer t.mux.Unlock()
+
 	// validate a circuit exist or not.
 
 	root := t.root
