@@ -3,101 +3,162 @@ package tree
 import (
 	"fmt"
 	"sync"
+	"sort"
 )
 
 const (
-	tempNode = -1
+	// CntItemLimit is the limit count of nodes.
+	CntItemLimit = 1000
+)
+
+var (
+	// ErrCntItemLimit is the error of the limit count.
+	ErrCntItemLimit = fmt.Errorf("the count of items exceed the limit")
+	// ErrItemNotExist is the error if the item doesn't exist in the tree.
+	ErrItemNotExist = fmt.Errorf("the item doesn't exist")
+	// ErrParentNotExist is the error if the parent doesn't exist in the tree.
+	ErrParentNotExist = fmt.Errorf("the parent doesn't exist")
 )
 
 // NewTree return the tree which set the root with the item.
 func NewTree(item Item) *Tree {
 	t := &Tree{
-		nextID: int(0),
+		root: item,
 	}
-	root := t.addEntry(item)
-	t.root = root
 
+	t.addEntry(item)
 	return t
 }
 
 // Tree is directory structure to return "tree" command format.
 type Tree struct {
-	nextID  int
-	root    *node
-	entries nodes
+	root    Item
+	adj     [CntItemLimit][CntItemLimit]bool
+	entries []Item
 
 	mux sync.Mutex
 }
 
-// Render return the result of which the root is rendered as strings.
+// Render return the tree format strings but if there is a circuit in the tree it return the error.
 func (t *Tree) Render() ([]string, error) {
-	t.mux.Lock()
-	defer t.mux.Unlock()
+	// validate a circuit exist or not.
 
-	adj := t.getAdjacents()
-	// sort adjactents with the topological sorting to validate the circuit exist or not.
-	if _, err := topologicalSort(adj); err != nil {
-		return []string{}, fmt.Errorf("circuit exist in the tree")
-	}
-
-	return t.root.Render(), nil
+	root := t.root
+	return t.render(root), nil
 }
 
-// Move move the item into the parent. 
+func (t *Tree) render(i Item) []string {
+	var (
+		ret []string
+	)
+	ret = append(ret, i.String())
+
+	childs := t.getChilds(i)
+	
+	if len(childs) == 0 {
+		return ret
+	}
+
+	for i, c := range childs {
+		lines := t.render(c)
+
+		if i == len(childs)-1 {
+			lines = renderLastChild(lines)
+		} else {
+			lines = renderChild(lines)
+		}
+
+		for _, l := range lines {
+			ret = append(ret, l)
+		}
+	}
+	return ret
+}
+
+func (t *Tree) getChilds(i Item) Items {
+	var (
+		childs Items
+		idxi, _ = t.getIndexEqual(i)
+	)
+
+	for idxc := 0; idxc < len(t.entries); idxc++ {
+		if t.adj[idxi][idxc] {
+			child := t.entries[idxc]
+			childs = append(childs, child)
+		}
+	}
+
+	sort.Sort(childs)
+
+	return childs
+}
+
+// Move move the item into the parent.
 func (t *Tree) Move(item, parent Item) error {
 	t.mux.Lock()
 	defer t.mux.Unlock()
 
-	p := t.getEqual(parent)
-	if p == nil {
-		return fmt.Errorf("'%s' parent node doesn't exist", p)
+	if !t.has(parent) {
+		return ErrParentNotExist
 	}
 
-	if same := t.getEqual(item); same != nil {
-		return fmt.Errorf("'%s' node already exist", same)
+	if !t.has(item) {
+		t.addEntry(item)
 	}
 
-	n := t.addEntry(item)
-	return t.move(n, p)
+	if err := t.move(item, parent); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (t *Tree) move(node, parent *node) error {
-	parent.AddChild(node)
+func (t *Tree) move(child, parent Item) error {
+	idxc, _ := t.getIndexEqual(child)
+	idxp, _ := t.getIndexEqual(parent)
+
+	idxOld, err := t.getIndexParent(child)
+
+	if err != nil {
+		t.adj[idxp][idxc] = true
+		return nil
+	}
+
+	t.adj[idxOld][idxc] = false
+	t.adj[idxp][idxc] = true
 
 	return nil
 }
 
-func (t *Tree) getEqual(i Item) *node {
-	n := newNode(tempNode, i)
-	for _, comp := range t.entries {
+func (t *Tree) has(i Item) bool {
+	if _, err := t.getIndexEqual(i); err != nil {
+		return false
+	}
+	return true
+}
+
+func (t *Tree) getIndexParent(child Item) (int, error) {
+	idxc, _ := t.getIndexEqual(child)
+
+	for idxp := 0; idxp < len(t.entries); idxp++ {
+		if t.adj[idxp][idxc] {
+			return idxp, nil
+		}
+	}
+
+	return -1, ErrParentNotExist
+}
+
+func (t *Tree) getIndexEqual(i Item) (int, error) {
+	for idx, comp := range t.entries {
 		// equal
-		if !n.Less(comp) && !comp.Less(n) {
-			return comp
+		if !i.Less(comp) && !comp.Less(i) {
+			return idx, nil
 		}
 	}
-
-	return nil
+	return -1, ErrItemNotExist
 }
 
-func (t *Tree) addEntry(i Item) *node {
-	n := newNode(t.nextID, i)
-	t.nextID++
-
-	t.entries = append(t.entries, n)
-	return n
-}
-
-// getAdjacents return the set of edges between nodes.
-func (t *Tree) getAdjacents() map[int][]int {
-	adj := make(map[int][]int, 0)
-
-	for _, from := range t.entries {
-		childs := make([]int, 0)
-
-		for _, to := range from.childs {
-			childs = append(childs, to.id)
-		}
-		adj[from.id] = childs
-	}
-	return adj
+func (t *Tree) addEntry(i Item) int {
+	t.entries = append(t.entries, i)
+	return len(t.entries)
 }

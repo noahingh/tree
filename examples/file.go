@@ -49,7 +49,7 @@ func main() {
 	t.Move(c2, dir1)
 
 	result, _ := t.Render()
-	for _, l := range  result {
+	for _, l := range result {
 		fmt.Println(l)
 	}
 }
