@@ -10,7 +10,7 @@ var (
 )
 
 // HasCircuit validate the set of adjacents has a circuit or not.
-func HasCircuit(adj [CntItemLimit][CntItemLimit]bool) bool {
+func HasCircuit(adj [][]bool) bool {
 	_, err := topologicalSort(adj)
 	if err != nil {
 		return true
@@ -18,13 +18,22 @@ func HasCircuit(adj [CntItemLimit][CntItemLimit]bool) bool {
 	return false
 }
 
-func topologicalSort(adj [CntItemLimit][CntItemLimit]bool) ([]int, error) {
+func topologicalSort(adj [][]bool) ([]int, error) {
 	var (
+		lenVer  = len(adj)
 		sorted  = []int{}
-		visited = make([]bool, CntItemLimit)
+		visited = make([]bool, lenVer)
 	)
 
-	for from := 0; from < CntItemLimit; from++ {
+	if lenVer == 0 {
+		return []int{}, nil
+	}
+
+	if !isSquare(adj) {
+		return []int{}, fmt.Errorf("the adj must to be square")
+	}
+
+	for from := 0; from < len(adj); from++ {
 		if visited[from] {
 			continue
 		}
@@ -43,15 +52,16 @@ func topologicalSort(adj [CntItemLimit][CntItemLimit]bool) ([]int, error) {
 }
 
 // visit visit all adjacent vertex as the depth first search.
-func visit(from int, adj [CntItemLimit][CntItemLimit]bool, visited []bool) []int {
+func visit(from int, adj [][]bool, visited []bool) []int {
 	var (
 		output []int
+		lenVer = len(adj)
 	)
 
 	// set visited
 	visited[from] = true
 
-	for to := 0; to < CntItemLimit; to++ {
+	for to := 0; to < lenVer; to++ {
 		if adj[from][to] && !visited[to] {
 			o := visit(to, adj, visited)
 			output = append(output, o...)
@@ -62,10 +72,21 @@ func visit(from int, adj [CntItemLimit][CntItemLimit]bool, visited []bool) []int
 	return output
 }
 
-func hasCircuit(sorted []int, adj [CntItemLimit][CntItemLimit]bool) bool {
-	for right := len(sorted) - 1; right >= 1; right-- {
+func isSquare(adj [][]bool) bool {
+	l := len(adj)
+
+	for _, s := range adj {
+		if len(s) != l {
+			return false
+		}
+	}
+	return true
+}
+
+func hasCircuit(reversed []int, adj [][]bool) bool {
+	for right := len(reversed) - 1; right >= 1; right-- {
 		for left := right - 1; left >= 0; left-- {
-			from, to := sorted[right], sorted[left]
+			from, to := reversed[right], reversed[left]
 
 			if adj[from][to] {
 				return true

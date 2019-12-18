@@ -5,65 +5,73 @@ import (
 	"testing"
 )
 
-func TestHasCircuit(t *testing.T) {
+func Test_topologicalSort(t *testing.T) {
 	type args struct {
-		adj [CntItemLimit][CntItemLimit]bool
+		adj [][]bool
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name    string
+		args    args
+		want    []int
+		wantErr bool
 	}{
 		{
 			name: "circuit",
 			args: args{
-				adj: [CntItemLimit][CntItemLimit]bool{
+				adj: [][]bool{
 					{false, true},
 					{true, false},
 				},
 			},
-			want: true,
+			want:    []int{},
+			wantErr: true,
 		},
 		{
 			name: "step",
 			args: args{
-				adj: [CntItemLimit][CntItemLimit]bool{
-					{false, true},
-					{false, false, true},
+				adj: [][]bool{
+					{false, true, false, false},
+					{false, false, true, false},
 					{false, false, false, true},
+					{false, false, false, false},
 				},
 			},
-			want: false,
+			want: []int{0, 1, 2, 3},
+			wantErr: false,
 		},
 		{
 			name: "file system",
 			args: args{
-				adj: [CntItemLimit][CntItemLimit]bool{
-					{false, true},
-					{false, false, true, true}, // 1 -> 2,3
-					{false, false, false, false},
-					{false, false, false, false},
+				adj: [][]bool{
+					{false, true, false, false, true, false}, // 0 -> 1,4
+					{false, false, true, true, false, false}, // 1 -> 2,3
+					{false, false, false, false, false, false},
+					{false, false, false, false, false, false},
 					{false, false, false, false, false, true}, // 4 -> 5
 					{false, false, false, false, false, false},
 				},
 			},
-			want: false,
+			want: []int{0, 4, 5, 1, 3, 2},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := HasCircuit(tt.args.adj); got != tt.want {
-				t.Errorf("HasCircuit() = %v, want %v", got, tt.want)
+			got, err := topologicalSort(tt.args.adj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("topologicalSort() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("topologicalSort() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-
 func Test_hasCircuit(t *testing.T) {
 	type args struct {
 		sorted []int
-		adj    [CntItemLimit][CntItemLimit]bool
+		adj    [][]bool
 	}
 	tests := []struct {
 		name string
@@ -74,7 +82,7 @@ func Test_hasCircuit(t *testing.T) {
 			name: "circuit exist",
 			args: args{
 				sorted: []int{0, 1},
-				adj: [CntItemLimit][CntItemLimit]bool{
+				adj: [][]bool{
 					{false, true},
 					{true, false},
 				},
@@ -123,4 +131,3 @@ func Test_reverse(t *testing.T) {
 		})
 	}
 }
-
