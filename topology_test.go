@@ -37,7 +37,6 @@ func Test_topologicalSort(t *testing.T) {
 				},
 			},
 			want: []int{0, 1, 2, 3},
-			wantErr: false,
 		},
 		{
 			name: "file system",
@@ -51,6 +50,7 @@ func Test_topologicalSort(t *testing.T) {
 					{false, false, false, false, false, false},
 				},
 			},
+			// the result of dfs is [2, 3, 1, 5, 4, 0]
 			want: []int{0, 4, 5, 1, 3, 2},
 		},
 	}
