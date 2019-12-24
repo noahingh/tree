@@ -11,7 +11,7 @@ var (
 	TabGrandLastChild = "    "
 )
 
-func renderChild(lines []string) []string {
+func tabChild(lines []string) []string {
 	var ret []string
 
 	l, lines := lines[0], lines[1:]
@@ -23,7 +23,7 @@ func renderChild(lines []string) []string {
 	return ret
 }
 
-func renderLastChild(lines []string) []string {
+func tabLastChild(lines []string) []string {
 	var ret []string
 
 	l, lines := lines[0], lines[1:]
