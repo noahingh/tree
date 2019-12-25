@@ -33,7 +33,7 @@ func main() {
 	t.Move(file("dir0"), file("root"))
 	t.Move(file("dir1"), file("root"))
 
-	t.Move(file("file 0"), file("dir0"))
+    t.Move(file("file 0"), file("dir0"))
     t.Move(file("file 1"), file("dir0"))
 
 	t.Move(file("file 2"), file("dir1"))
