@@ -2,8 +2,8 @@ package tree
 
 import (
 	"fmt"
-	"sync"
 	"sort"
+	"sync"
 )
 
 const (
@@ -26,7 +26,7 @@ var (
 func NewTree(item Item) *Tree {
 	t := &Tree{
 		root: item,
-		mux: &sync.Mutex{},
+		mux:  &sync.Mutex{},
 	}
 
 	t.addEntry(item)
@@ -35,7 +35,7 @@ func NewTree(item Item) *Tree {
 
 // Tree is directory structure to return "tree" command format.
 type Tree struct {
-	root    Item
+	root Item
 	// The index of entry should be the id of the item,
 	// all methods of the Tree use the index instead of the Item.
 	adj     [CntItemLimit][CntItemLimit]bool
@@ -51,19 +51,19 @@ func (t *Tree) Render() ([]string, error) {
 
 	// validate a circuit exist or not.
 
-	r := getIndexEqual(t.entries, t.root) 
+	r := getIndexEqual(t.entries, t.root)
 	return t.render(r), nil
 }
 
 func (t *Tree) render(i int) []string {
 	var (
-		ret []string
+		ret  []string
 		item = t.entries[i]
 	)
 	ret = append(ret, item.String())
 
 	childs := t.getChilds(i)
-	
+
 	if len(childs) == 0 {
 		return ret
 	}
@@ -87,7 +87,7 @@ func (t *Tree) render(i int) []string {
 func (t *Tree) getChilds(i int) []int {
 	var (
 		childItems = make(Items, 0)
-		childs = make([]int, 0)
+		childs     = make([]int, 0)
 	)
 
 	for child := 0; child < len(t.entries); child++ {
@@ -96,7 +96,7 @@ func (t *Tree) getChilds(i int) []int {
 		}
 	}
 
-	// sort childs to print ordered
+	// sort childs to print ordered.
 	sort.Sort(childItems)
 
 	for _, item := range childItems {
@@ -144,7 +144,126 @@ func (t *Tree) move(child, parent int) error {
 	return nil
 }
 
-func (t *Tree) getParent(child int) (int) {
+// Remove remove the item in the tree, and also all childs under the item.
+func (t *Tree) Remove(item Item) error {
+	t.mux.Lock()
+	defer t.mux.Unlock()
+
+	i := getIndexEqual(t.entries, item)
+
+	items := t.getSubTreeItems(i)
+	if hasCircuit(items, t.getAdj()) {
+		return ErrCircuit
+	}
+
+	for _, i := range items {
+		t.remove(i)
+	}
+
+	t.compact()
+	return nil
+}
+
+func (t *Tree) remove(i int) {
+	// remove the item from internal data.
+	t.entries[i] = nil
+
+	for from := 0; from < len(t.entries); from++ {
+		t.adj[from][i] = false
+	}
+
+	for to := 0; to < len(t.entries); to++ {
+		t.adj[i][to] = false
+	}
+}
+
+// compact remove the nil and shift the element to empty.
+func (t *Tree) compact() {
+	var (
+		prevID  = make(map[int]int)
+		entries = make([]Item, 0)
+		adj     = [CntItemLimit][CntItemLimit]bool{}
+	)
+
+	// compact the entries of the tree.
+	for old, i := range t.entries {
+		if i == nil {
+			continue
+		}
+
+		entries = append(entries, i)
+		new := len(entries) - 1
+		prevID[new] = old
+	}
+
+	// set new adjacents.
+	for from := 0; from < len(entries); from++ {
+		for to := 0; to < len(entries); to++ {
+			prevFrom, prevTo := prevID[from], prevID[to]
+
+			if t.adj[prevFrom][prevTo] {
+				adj[from][to] = true
+			}
+		}
+	}
+
+	t.entries = entries
+	t.adj = adj
+}
+
+//  getSubTreeItems return childs and grand childs of the index by the slice which is sorted topologically.
+func (t *Tree) getSubTreeItems(i int) []int {
+	var (
+		visited = make(map[int]bool)
+	)
+
+	ret := t.visit(i, visited)
+	ret = reverse(ret)
+
+	return ret
+}
+
+// depth first search
+func (t *Tree) visit(i int, visited map[int]bool) []int {
+	var (
+		ret = make([]int, 0)
+	)
+
+	visited[i] = true
+
+	for child := 0; child < len(t.entries); child++ {
+		if _, ok := visited[child]; !ok && t.adj[i][child] {
+			grandChilds := t.visit(child, visited)
+			ret = append(ret, grandChilds...)
+		}
+	}
+
+	ret = append(ret, i)
+	return ret
+}
+
+func (t *Tree) getAdj() [][]bool {
+	var (
+		size = len(t.entries)
+		ret  = make([][]bool, size)
+	)
+
+	for i := 0; i < size; i++ {
+		ret[i] = make([]bool, size)
+	}
+
+	// copy values of adj
+	for from := 0; from < size; from++ {
+		for to := 0; to < size; to++ {
+			if t.adj[from][to] {
+				ret[from][to] = true
+			}
+		}
+	}
+	return ret
+}
+
+func (t *Tree) getParent(child int) int {
 	for parent := 0; parent < len(t.entries); parent++ {
 		if t.adj[parent][child] {
 			return parent
@@ -160,7 +279,7 @@ func (t *Tree) addEntry(i Item) int {
 }
 
 // getIndexEqual return the index, if the item doesn't exist it returns -1.
-func getIndexEqual(items []Item, i Item) (int) {
+func getIndexEqual(items []Item, i Item) int {
 	for idx, comp := range items {
 		// equal
 		if !i.Less(comp) && !comp.Less(i) {
