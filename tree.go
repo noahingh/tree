@@ -50,6 +50,9 @@ func (t *Tree) Render() ([]string, error) {
 	defer t.mux.Unlock()
 
 	// validate a circuit exist or not.
+	if HasCircuit(t.getAdj()) {
+		return nil, ErrCircuit
+	}
 
 	r := getIndexEqual(t.entries, t.root)
 	return t.render(r), nil

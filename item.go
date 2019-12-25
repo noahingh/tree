@@ -3,6 +3,8 @@ package tree
 // Item represent ...
 type Item interface {
 	String() string
+	// Less compare with the other item, and if two items are equal
+	// Less method have to return false for each other.
 	Less(comp Item) bool
 }
 
