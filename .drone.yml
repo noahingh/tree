@@ -1,0 +1,18 @@
+---
+kind: pipeline
+name: go-1-11
+
+steps:
+- name: unit-test
+  image: golang:1.11
+  commands:
+  - go test ./... -v -race
+---
+kind: pipeline
+name: go-1-13
+
+steps:
+- name: unit-test
+  image: golang:1.13
+  commands:
+  - go test ./... -v -race
