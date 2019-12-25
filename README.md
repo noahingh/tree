@@ -1,8 +1,12 @@
 # Tree
 
+[![Build Status](https://cloud.drone.io/api/badges/hanjunlee/tree/status.svg)](https://cloud.drone.io/hanjunlee/tree)
+
 Package tree help to display content recursively as tree-like format. 
 
 ## Usage
+
+**code**
 
 ```go
 package main
@@ -15,11 +19,11 @@ import (
 
 type file string
 
-func (f *file) String() string {
+func (f file) String() string {
 	return string(f)
 }
 
-func (f *file) Less(comp Item) bool {
+func (f file) Less(comp tree.Item) bool {
 	return string(f) < string(comp.(file))
 }
 
@@ -39,4 +43,15 @@ func main() {
 		fmt.Println(l)
 	}
 }
+```
+
+**output**
+
+```output
+root
+├── dir 0
+│   ├── file 0
+│   └── file 1
+└── dir 1
+    └── file 2
 ```

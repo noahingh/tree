@@ -5,11 +5,11 @@ Before create a new tree, implement Item:
 
 	type file string
 
-	func (f *file) String() string {
+	func (f file) String() string {
 		return string(f)
 	}
 
-	func (f *file) Less(comp Item) bool {
+	func (f file) Less(comp Item) bool {
 		return string(f) < string(comp.(file))
 	}
 

@@ -6,47 +6,26 @@ import (
 	"github.com/hanjunlee/tree"
 )
 
-func newFile(n string) *file {
-	return &file{
-		name: n,
-	}
+type file string
+
+func (f file) String() string {
+	return string(f)
 }
 
-type file struct {
-	name string
-}
-
-func (f *file) String() string {
-	return f.name
-}
-
-func (f *file) Less(comp tree.Item) bool {
-	if f.name < comp.(*file).name {
-		return true
-	}
-
-	return false
+func (f file) Less(comp tree.Item) bool {
+	return string(f) < string(comp.(file))
 }
 
 func main() {
+	t := tree.NewTree(file("root"))
 
-	root := newFile("root")
-	t := tree.NewTree(root)
+	t.Move(file("dir0"), file("root"))
+	t.Move(file("dir1"), file("root"))
 
-	dir0 := newFile("dir 0")
-	dir1 := newFile("dir 1")
+	t.Move(file("file 0"), file("dir0"))
+    t.Move(file("file 1"), file("dir0"))
 
-	c0 := newFile("child 0")
-	c1 := newFile("child 1")
-	c2 := newFile("child 2")
-
-	t.Move(dir0, root)
-	t.Move(dir1, root)
-
-	t.Move(c0, dir0)
-	t.Move(c1, dir0)
-
-	t.Move(c2, dir1)
+	t.Move(file("file 2"), file("dir1"))
 
 	result, _ := t.Render()
 	for _, l := range result {
