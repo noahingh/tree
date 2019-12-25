@@ -9,6 +9,8 @@ import (
 const (
 	// CntItemLimit is the limit count of nodes.
 	CntItemLimit = 1000
+
+	notExist = -1
 )
 
 var (
@@ -34,6 +36,8 @@ func NewTree(item Item) *Tree {
 // Tree is directory structure to return "tree" command format.
 type Tree struct {
 	root    Item
+	// The index of entry should be the id of the item,
+	// all methods of the Tree use the index instead of the Item.
 	adj     [CntItemLimit][CntItemLimit]bool
 	entries []Item
 
@@ -47,15 +51,16 @@ func (t *Tree) Render() ([]string, error) {
 
 	// validate a circuit exist or not.
 
-	root := t.root
-	return t.render(root), nil
+	r := getIndexEqual(t.entries, t.root) 
+	return t.render(r), nil
 }
 
-func (t *Tree) render(i Item) []string {
+func (t *Tree) render(i int) []string {
 	var (
 		ret []string
+		item = t.entries[i]
 	)
-	ret = append(ret, i.String())
+	ret = append(ret, item.String())
 
 	childs := t.getChilds(i)
 	
@@ -67,9 +72,9 @@ func (t *Tree) render(i Item) []string {
 		lines := t.render(c)
 
 		if i == len(childs)-1 {
-			lines = renderLastChild(lines)
+			lines = tabLastChild(lines)
 		} else {
-			lines = renderChild(lines)
+			lines = tabChild(lines)
 		}
 
 		for _, l := range lines {
@@ -79,20 +84,24 @@ func (t *Tree) render(i Item) []string {
 	return ret
 }
 
-func (t *Tree) getChilds(i Item) Items {
+func (t *Tree) getChilds(i int) []int {
 	var (
-		childs Items
-		idxi, _ = t.getIndexEqual(i)
+		childItems = make(Items, 0)
+		childs = make([]int, 0)
 	)
 
-	for idxc := 0; idxc < len(t.entries); idxc++ {
-		if t.adj[idxi][idxc] {
-			child := t.entries[idxc]
-			childs = append(childs, child)
+	for child := 0; child < len(t.entries); child++ {
+		if t.adj[i][child] {
+			childItems = append(childItems, t.entries[child])
 		}
 	}
 
-	sort.Sort(childs)
+	// sort childs to print ordered
+	sort.Sort(childItems)
+
+	for _, item := range childItems {
+		childs = append(childs, getIndexEqual(t.entries, item))
+	}
 
 	return childs
 }
@@ -102,67 +111,61 @@ func (t *Tree) Move(item, parent Item) error {
 	t.mux.Lock()
 	defer t.mux.Unlock()
 
-	if !t.has(parent) {
+	var (
+		i = getIndexEqual(t.entries, item)
+		p = getIndexEqual(t.entries, parent)
+	)
+
+	if p == notExist {
 		return ErrParentNotExist
 	}
 
-	if !t.has(item) {
-		t.addEntry(item)
+	if i == notExist {
+		i = t.addEntry(item)
 	}
 
-	if err := t.move(item, parent); err != nil {
+	if err := t.move(i, p); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *Tree) move(child, parent Item) error {
-	idxc, _ := t.getIndexEqual(child)
-	idxp, _ := t.getIndexEqual(parent)
+func (t *Tree) move(child, parent int) error {
+	oldParent := t.getParent(child)
 
-	idxOld, err := t.getIndexParent(child)
-
-	if err != nil {
-		t.adj[idxp][idxc] = true
+	if oldParent == notExist {
+		t.adj[parent][child] = true
 		return nil
 	}
 
-	t.adj[idxOld][idxc] = false
-	t.adj[idxp][idxc] = true
+	t.adj[oldParent][child] = false
+	t.adj[parent][child] = true
 
 	return nil
 }
 
-func (t *Tree) has(i Item) bool {
-	if _, err := t.getIndexEqual(i); err != nil {
-		return false
-	}
-	return true
-}
-
-func (t *Tree) getIndexParent(child Item) (int, error) {
-	idxc, _ := t.getIndexEqual(child)
-
-	for idxp := 0; idxp < len(t.entries); idxp++ {
-		if t.adj[idxp][idxc] {
-			return idxp, nil
+func (t *Tree) getParent(child int) (int) {
+	for parent := 0; parent < len(t.entries); parent++ {
+		if t.adj[parent][child] {
+			return parent
 		}
 	}
 
-	return -1, ErrParentNotExist
-}
-
-func (t *Tree) getIndexEqual(i Item) (int, error) {
-	for idx, comp := range t.entries {
-		// equal
-		if !i.Less(comp) && !comp.Less(i) {
-			return idx, nil
-		}
-	}
-	return -1, ErrItemNotExist
+	return -1
 }
 
 func (t *Tree) addEntry(i Item) int {
 	t.entries = append(t.entries, i)
-	return len(t.entries)
+	return len(t.entries) - 1
+}
+
+// getIndexEqual return the index, if the item doesn't exist it returns -1.
+func getIndexEqual(items []Item, i Item) (int) {
+	for idx, comp := range items {
+		// equal
+		if !i.Less(comp) && !comp.Less(i) {
+			return idx
+		}
+	}
+	return -1
 }
