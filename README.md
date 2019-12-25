@@ -1,6 +1,6 @@
 # Tree
 
-[![Build Status](https://cloud.drone.io/api/badges/hanjunlee/tree/status.svg)](https://cloud.drone.io/hanjunlee/tree)
+[![Build Status](https://cloud.drone.io/api/badges/hanjunlee/tree/status.svg)](https://cloud.drone.io/hanjunlee/tree) [![GoDoc](https://godoc.org/github.com/hanjunlee/tree?status.svg)](https://godoc.org/github.com/hanjunlee/tree)
 
 Package tree help to display content recursively as tree-like format. 
 
