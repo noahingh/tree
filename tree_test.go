@@ -29,8 +29,8 @@ func TestRendering(t *testing.T) {
 	tree := NewTree(root)
 
 	tree.Move(dir0, root)
-	tree.Move(file0, dir0)
 	tree.Move(file1, dir0)
+	tree.Move(file0, dir0)
 
 	tree.Move(dir1, root)
 	tree.Move(file2, dir1)
