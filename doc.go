@@ -17,16 +17,15 @@ Firstly create a new tree with the item:
 
 	tree := NewTree(file("root"))
 
-After creating a new tree, you can construct the tree by adding or removing the node by methods, Move and Remove:
+After creating a new tree, you can construct the tree by adding or removing the item by methods, Move and Remove:
 
 	tree.Move(file("dir 0"), file("root"))
 	tree.Move(file("file 0"), file("dir 0"))
 	
 	tree.Remove(file("dir 0"))
 
-Note that when you construct the tree you should consider the circuit of the tree for a infinite loop, of course, 
-this package validates that the circuit exist or not before removing and rendering. These methods return the error so that 
-you should check the error.
+Note that when you construct the tree you should consider the circuit, of course, 
+this package prevent the tree has a circuit when moving a item. 
 
 At last, you can render the tree by Render method: 
 
@@ -35,6 +34,5 @@ At last, you can render the tree by Render method:
 		fmt.println(s)
 	}
 
-IMPORTANT: At this moment, this package has the limit of count of nodes, it is 1000, if you add more than the limit it return the error.
 */
 package tree

@@ -22,10 +22,7 @@ func main() {
 	t.Move(file("dir0"), file("root"))
 	t.Move(file("dir1"), file("root"))
 
-	err := t.Move(file("file 0"), file("dir0"))
-	if err != nil {
-		fmt.Printf("error: %s", err)
-	}
+	t.Move(file("file 0"), file("dir0"))
 	t.Move(file("file 1"), file("dir0"))
 
 	t.Move(file("file 2"), file("dir1"))
