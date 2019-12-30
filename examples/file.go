@@ -26,6 +26,7 @@ func main() {
 	t.Move(file("file 1"), file("dir0"))
 
 	t.Move(file("file 2"), file("dir1"))
+	t.Remove(file("file 0"))
 
 	result := t.Render()
 	for _, l := range result {
