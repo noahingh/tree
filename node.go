@@ -1,6 +1,8 @@
 package tree
 
-import "sort"
+import (
+	"sort"
+)
 
 type nodes []*node
 
@@ -17,6 +19,15 @@ func (ns nodes) Swap(i, j int) {
 	ns[i] = ns[j]
 	ns[j] = temp
 	return
+}
+
+func search(ns nodes, x *node) int {
+	for i, n := range ns {
+		if x.equal(n) {
+			return i
+		}
+	}
+	return -1
 }
 
 func appendNode(ns nodes, news ...*node) nodes {
@@ -36,14 +47,7 @@ func removeNode(ns nodes, n *node) nodes {
 	ret := make(nodes, len(ns))
 	copy(ret, ns)
 
-	idx := sort.Search(len(ret), func(i int) bool {
-		tmp := ns[i]
-		if n.equal(tmp) {
-			return true
-		}
-
-		return false
-	})
+	idx := search(ret, n)
 	ret = append(ret[:idx], ret[idx+1:]...)
 
 	return ret
@@ -54,11 +58,13 @@ type node struct {
 	children nodes
 
 	item Item
+	debug string
 }
 
 func newNode(i Item) *node {
 	return &node{
 		item: i,
+		debug: i.String(),
 	}
 }
 

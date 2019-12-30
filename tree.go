@@ -3,7 +3,6 @@ package tree
 import (
 	"fmt"
 	"sync"
-	"sort"
 )
 
 // NewTree return the tree which set the root with the item.
@@ -54,16 +53,8 @@ func (t *Tree) has(i Item) bool {
 func (t *Tree) search(i Item) *node {
 	tmp := newNode(i)
 
-	idx := sort.Search(len(t.entries), func (i int) bool {
-		n := t.entries[i]
-		if tmp.equal(n) {
-			return true
-		}
-
-		return false
-	})
-
-	if idx == len(t.entries) {
+	idx := search(t.entries, tmp)
+	if idx == -1 {
 		return nil
 	}
 
@@ -76,12 +67,12 @@ func (t *Tree) Move(item, parent Item) error {
 	defer t.mux.Unlock()
 
 	var c, p *node
-	
-	if parent != nil && !t.has(item) {
+
+	if parent != nil && !t.has(parent) {
 		return fmt.Errorf("the parent item doesn't exist")
 	}
 
-    if parent == nil {
+	if parent == nil {
 		p = t.root
 	} else {
 		p = t.search(parent)
@@ -90,8 +81,9 @@ func (t *Tree) Move(item, parent Item) error {
 	if !t.has(item) {
 		c = newNode(item)
 		t.move(c, p)
+		t.entries = appendNode(t.entries, c)
 		return nil
-	} 
+	}
 
 	c = t.search(item)
 	// if c is the ancestor of p, it can't move.
@@ -99,13 +91,17 @@ func (t *Tree) Move(item, parent Item) error {
 		return fmt.Errorf("couldn't move the item")
 	}
 	t.move(c, p)
+	t.entries = appendNode(t.entries, c)
 
 	return nil
 }
 
 func (t *Tree) move(child, parent *node) {
-	prev := child.parent
-	prev.children = removeNode(prev.children, child)
+	if child.parent != nil {
+		prev := child.parent
+		prev.children = removeNode(prev.children, child)
+		child.parent = nil
+	}
 
 	parent.children = appendNode(parent.children, child)
 	child.parent = parent
@@ -121,26 +117,29 @@ func (t *Tree) Remove(item Item) error {
 	}
 
 	n := t.search(item)
-
-	p := n.parent
-	p.children = removeNode(p.children, n)
-
-	n.parent = nil
 	t.remove(n)
-
 	return nil
 }
 
+// remove remove the node from the tree
 func (t *Tree) remove(n *node) {
 	if len(n.children) == 0 {
+		if p := n.parent; p != nil {
+			p.children = removeNode(p.children, n)
+		}
+
 		removeNode(t.entries, n)
-		n.parent = nil
-		return 
+		return
 	}
 
+	// delete children.
 	for _, c := range n.children {
 		t.remove(c)
 	}
-	removeNode(t.entries, n)
 	n.children = nodes{}
+
+	if p := n.parent; p != nil {
+		p.children = removeNode(p.children, n)
+	}
+	removeNode(t.entries, n)
 }
