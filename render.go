@@ -1,5 +1,9 @@
 package tree
 
+import (
+	"sort"
+)
+
 var (
 	// TabChild is the prepended string for childs when a node would be rendered.
 	TabChild = "├── "
@@ -10,6 +14,32 @@ var (
 	// TabGrandLastChild is the prepended string for the last child when a node would be rendered.
 	TabGrandLastChild = "    "
 )
+
+func render(n *node) []string {
+	var (
+		ret  = []string{n.String()}
+		cntC = len(n.children)
+	)
+	if cntC == 0 {
+		return ret
+	}
+
+	sort.Sort(n.children)
+	for i, c := range n.children {
+		lines := render(c)
+
+		if i == cntC-1 {
+			lines = tabLastChild(lines)
+		} else {
+			lines = tabChild(lines)
+		}
+
+		for _, l := range lines {
+			ret = append(ret, l)
+		}
+	}
+	return ret
+}
 
 func tabChild(lines []string) []string {
 	var ret []string
