@@ -105,19 +105,9 @@ func (t *Tree) Move(item, parent Item) error {
 
 func (t *Tree) move(child, parent *node) {
 	prev := child.parent
-	
-	// remove child from the children of the prev parent
-	idx := sort.Search(len(prev.children), func (i int) bool {
-		c := prev.children[i]
-		if child.equal(c) {
-			return true
-		}
+	prev.children = removeNode(prev.children, child)
 
-		return false
-	})
-	prev.children = append(prev.children[:idx], prev.children[idx+1:]...)
-
-	parent.children.append(child)
+	parent.children = appendNode(parent.children, child)
 	child.parent = parent
 }
 
@@ -125,6 +115,32 @@ func (t *Tree) move(child, parent *node) {
 func (t *Tree) Remove(item Item) error {
 	t.mux.Lock()
 	defer t.mux.Unlock()
+
+	if !t.has(item) {
+		return fmt.Errorf("the item is not exist")
+	}
+
+	n := t.search(item)
+
+	p := n.parent
+	p.children = removeNode(p.children, n)
+
+	n.parent = nil
+	t.remove(n)
+
 	return nil
 }
 
+func (t *Tree) remove(n *node) {
+	if len(n.children) == 0 {
+		removeNode(t.entries, n)
+		n.parent = nil
+		return 
+	}
+
+	for _, c := range n.children {
+		t.remove(c)
+	}
+	removeNode(t.entries, n)
+	n.children = nodes{}
+}

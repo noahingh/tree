@@ -19,10 +19,34 @@ func (ns nodes) Swap(i, j int) {
 	return
 }
 
-func (ns nodes) append(n *node) {
-	ns = append(ns, n)
-	sort.Sort(ns)
-	return
+func appendNode(ns nodes, news ...*node) nodes {
+	ret := make(nodes, len(ns))
+	copy(ret, ns)
+
+	for _, n := range news {
+		ret = append(ret, n)
+	}
+
+	sort.Sort(ret)
+	return ret
+}
+
+// remove node from the slice of node.
+func removeNode(ns nodes, n *node) nodes {
+	ret := make(nodes, len(ns))
+	copy(ret, ns)
+
+	idx := sort.Search(len(ret), func(i int) bool {
+		tmp := ns[i]
+		if n.equal(tmp) {
+			return true
+		}
+
+		return false
+	})
+	ret = append(ret[:idx], ret[idx+1:]...)
+
+	return ret
 }
 
 type node struct {
