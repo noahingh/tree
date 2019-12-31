@@ -80,7 +80,7 @@ func (t *Tree) Move(item, parent Item) error {
 
 	if !t.has(item) {
 		c = newNode(item)
-		t.move(c, p)
+		move(c, p)
 		t.entries = appendNode(t.entries, c)
 		return nil
 	}
@@ -90,13 +90,13 @@ func (t *Tree) Move(item, parent Item) error {
 	if isAncestor(c, p) {
 		return fmt.Errorf("couldn't move the item")
 	}
-	t.move(c, p)
+	move(c, p)
 	t.entries = appendNode(t.entries, c)
 
 	return nil
 }
 
-func (t *Tree) move(child, parent *node) {
+func move(child, parent *node) {
 	if child.parent != nil {
 		prev := child.parent
 		prev.children = removeNode(prev.children, child)
