@@ -34,5 +34,7 @@ At last, you can render the tree by Render method:
 		fmt.println(s)
 	}
 
+If you want to change the prefix of child, see variables.
+
 */
 package tree
