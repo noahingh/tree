@@ -28,6 +28,19 @@ type Tree struct {
 	mux     *sync.Mutex
 }
 
+// RenderedItems return items that sorted same as rendered.
+func (t *Tree) RenderedItems() []Item {
+	t.mux.Lock()
+	defer t.mux.Unlock()
+
+	ret := make([]Item, 0)
+	ns := getRenderedNode(t.root)
+	for _, n := range ns {
+		ret = append(ret, n.item)
+	}
+	return ret
+}
+
 // Render return the tree format strings.
 func (t *Tree) Render() []string {
 	t.mux.Lock()

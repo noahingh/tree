@@ -41,6 +41,25 @@ func render(n *node) []string {
 	return ret
 }
 
+// getRenderedNode return nodes which is sorted same as the render function.
+func getRenderedNode(n *node) nodes {
+	var (
+		ret  = nodes{ n }
+		cntC = len(n.children)
+	)
+	if cntC == 0 {
+		return ret
+	}
+
+	sort.Sort(n.children)
+	for _, c := range n.children {
+		ns := getRenderedNode(c)
+		ret = appendNode(ret, ns...)
+	}
+	return ret
+
+}
+
 func tabChild(lines []string) []string {
 	var ret []string
 
