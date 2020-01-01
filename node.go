@@ -1,9 +1,5 @@
 package tree
 
-import (
-	"sort"
-)
-
 type nodes []*node
 
 func (ns nodes) Len() int {
@@ -38,7 +34,6 @@ func appendNode(ns nodes, news ...*node) nodes {
 		ret = append(ret, n)
 	}
 
-	sort.Sort(ret)
 	return ret
 }
 
